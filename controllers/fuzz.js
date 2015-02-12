@@ -39,7 +39,7 @@ exports.decode = function(req, res) {
 
             res.send($.html());
         } else {
-            res.send('Error occurred');
+            res.send('Unable to retrieve HTML body');
         }
     });
 };
