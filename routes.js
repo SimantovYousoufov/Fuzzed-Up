@@ -10,6 +10,4 @@ module.exports = function(app) {
     app.get('/pattern', fuzzController.getPattern);
 
     app.get('/data', fuzzController.data);
-
-    app.use(express.static('./public'));
 };
