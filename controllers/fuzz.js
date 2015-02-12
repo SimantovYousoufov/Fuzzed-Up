@@ -1,86 +1,26 @@
-var http = require('http');
-var cheerio = require('cheerio');
+'use strict';
 
-var fs = require('fs');
+var cheerio = require('cheerio');
+var utility = require('./utility');
 
 var goal = 'Elegantly unscramble this message using the space provided. Then write the scrambler that made it. The answer is an object with global scope that can scramble and unscramble any text any number of times.';
 
-// Utility functions
-function getCode(url, callback) {
-    http.get(url, function(response) {
-        var body = '';
-        // Get html body
-        response.on('data', function(htmlBody) {
-            body += htmlBody;
-        });
-
-        // Call callback
-        response.on('end', function() {
-            callback(body);
-        });
-    }).on('error', function() {
-        callback(null);
-    })
-}
-
-var widthCount = 1;
-function garbageString(useChars, min, max, width) {
-    // Math.floor will give all possibilities an equal chance to be picked, Math.random will have half the chance of min/max to roll
-    var numberOfChars = Math.floor(Math.random() * (max - min) + min);
-
-    string = '';
-    for (var i = 0; i <= numberOfChars; i++) {
-        string += '<span>';
-        string += useChars.charAt(Math.floor(Math.random() * useChars.length));
-        string += '</span>';
-
-        if (widthCount % width === 0) {
-            string += '<br>';
-        }
-        widthCount++;
-    }
-    return string;
-}
-
-function inArray(needle, haystack) {
-    return haystack.indexOf(needle) > -1; // False if not in haystack
-}
-
-function setOptions(reqBody) {
-    return {
-        scrambleThis: reqBody.to_scramble || goal,
-        superSecretChars: reqBody.use_chars || '012345679ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*():/',
-        minSpacing: reqBody.minSpacing || 10,
-        maxSpacing: reqBody.maxSpacing || 20,
-        selector: reqBody.selector || 'body',
-        width: reqBody.width || 50
-    };
-}
-
-function getStats(file) {
-    var statsFile = __dirname + '/../database/'+file+'.json';
-    return JSON.parse(fs.readFileSync(statsFile)); // Don't need to specify encoding
-}
-
-function writeStats(file, data) {
-    var statsFile = __dirname + '/../database/'+file+'.json';
-    fs.writeFile(statsFile, data, function(err) {
-        if (err) throw err;
-        console.log('file saved');
-    })
-}
-
+/**
+ * Decodes the Fuzzed up message
+ *
+ * @param req
+ * @param res
+ */
 exports.decode = function(req, res) {
-    var url = 'http://quizzes.fuzzstaging.com/quizzes/js1';
-    var selector = 'body';
+    var url = req.body.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
+    var selector = req.body.selector || 'body';
 
-    getCode(url, function(htmlBody) {
+    utility.getCode(url, function(htmlBody) {
         if (htmlBody) {
-            //console.log(htmlBody);
-
             // For dat jQuery-like API
             var $ = cheerio.load(htmlBody);
 
+            // Just for cleaner HTML output, not functionally required
             $('br').each(function() {
                 $(this).remove();
             });
@@ -89,7 +29,7 @@ exports.decode = function(req, res) {
             $('span[hidden]').each(function() {
                 goal += $(this).text();
             });
-            $(selector).prepend('<div>'+goal+'</div>');
+            $(selector).prepend('<div>'+goal+'</div>'); // Extract the hidden message
 
             // Handle hiding non-used chars
             $('span:not([hidden])').remove();
@@ -101,71 +41,89 @@ exports.decode = function(req, res) {
     });
 };
 
+/**
+ * Fuzzes up a message
+ *
+ * @param req
+ * @param res
+ */
 exports.scramble = function(req, res) {
-    var options = setOptions(req.body);
+    var options = utility.setOptions(req.body);
 
     var html = '<html><' + options.selector + '>';
     html += '<head><style>body{font-family:monospace}</style></head>';
+
     var spacerCount = 0; // Position in scrambleThis string
-    // while spacerCount <= scrambleThis.length
+    // Iterate over the string and insert a garbageString after each index
     while (spacerCount <= options.scrambleThis.length) {
-        // response += <span hidden=''>scrambleThis[spacerCount]</span>
-        secretLetter = '<span hidden class="secretChar">' + options.scrambleThis[spacerCount] + '</span>';
+        var secretLetter = '<span hidden class="secretChar">' + options.scrambleThis[spacerCount] + '</span>';
         spacerCount++;
 
-        // rand num of chars output b/w min/max (utility function) ||
-        postString = garbageString(options.superSecretChars, options.minSpacing, options.maxSpacing, options.width);
+        // Fill the garbage string
+        var postString = utility.garbageString(
+            options.superSecretChars,
+            options.minSpacing,
+            options.maxSpacing,
+            options.width
+        );
 
         html += secretLetter + postString;
     }
     // add end chunk of chars
-    html += garbageString(options.superSecretChars, options.minSpacing, options.maxSpacing, options.width);
+    html += utility.garbageString(options.superSecretChars, options.minSpacing, options.maxSpacing, options.width);
     html += '</' + options.selector + '></html>';
 
     res.send(html);
 };
 
+/**
+ * Determines the Fuzz (or a similar URL's) pattern
+ *
+ * @param req
+ * @param res
+ */
 exports.getPattern = function(req, res) {
     var url = req.body.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
-    getCode(url, function(htmlBody) {
+    utility.getCode(url, function(htmlBody) {
         if (htmlBody) {
             var $ = cheerio.load(htmlBody);
-            //var scrambledText = '';
-            var lastIndex = 0;
 
-            var stats = getStats('stats');
-            var minRangeSinceLast = stats.minRange || 1000;
+            var lastIndex = 0; // Placeholder for secret character index()
+            var stats = utility.getStats('stats'); // Load previously acquired stats
+            var minRangeSinceLast = stats.minRange || 99999;
             var maxRangeSinceLast = stats.maxRange || 0;
-            var charsUsed = getStats('characters') || {};
-            var breakIndexes = [];
+            var charsUsed = utility.getStats('characters') || {}; // Load character stats
 
             $('span').each(function() {
-                //scrambledText += $(this).text();
+                // If character of secret message
                 if (typeof $(this).attr('hidden') != 'undefined') {
+                    // Lowest spacing b/w secret characters?
                     if ($(this).index() > 0 && minRangeSinceLast > ($(this).index() - lastIndex)) {
                         minRangeSinceLast = $(this).index() - lastIndex;
                     }
 
+                    // Highest spacing between characters?
                     if (maxRangeSinceLast < ($(this).index() - lastIndex)) {
                         maxRangeSinceLast = $(this).index() - lastIndex;
                     }
+
                     lastIndex = $(this).index();
                 } else if (!$(this).is('br')) {
-                    // Lets keep some simple stats of how often certain characters appear
+                    // Create/update record of character frequency
                     charsUsed[$(this).text()] =
                         typeof charsUsed[$(this).text()] != 'undefined' ? // Character already set?
                         charsUsed[$(this).text()] + 1 : 1; // Add count else create a record
                 }
             });
 
+            var breakIndexes = [];
             $('br').each(function() {
-                // Ignore br tags
                 breakIndexes.push($(this).index());
             });
 
             var characters = [];
             for (var key in charsUsed) {
-                if (charsUsed.hasOwnProperty(key)) characters.push(key);
+                if (charsUsed.hasOwnProperty(key)) characters.push(key); // Get just the chars
             }
 
             var blockWidth = stats.blockWidth || 0;
@@ -179,29 +137,58 @@ exports.getPattern = function(req, res) {
                 maxRange: maxRangeSinceLast,
                 blockWidth: blockWidth
             };
-            writeStats('stats', JSON.stringify(statistics, undefined, 2));
-            writeStats('characters', JSON.stringify(charsUsed, undefined, 2));
+            utility.writeStats('stats', JSON.stringify(statistics, undefined, 2));
+            utility.writeStats('characters', JSON.stringify(charsUsed, undefined, 2));
 
+            // Format so we can just copy/paste a request to /scramble
             var response = {
-                minRange: minRangeSinceLast,
-                maxRange: maxRangeSinceLast,
-                characters: characters.join(''),
-                blockWidth: blockWidth,
-                breakIndexes: breakIndexes
+                minSpacing: minRangeSinceLast,
+                maxSpacing: maxRangeSinceLast,
+                superSecretChars: characters,
+                width: blockWidth
             };
-            res.send(response);
+
+            res.json(response);
         } else {
-            res.send('Error occurred');
+            res.send('Unable to retrieve HTML body');
         }
     })
 };
 
 /**
- * - Do a weighted chance of fuzz characters
- * Statistics to graph:
- * - Percent chance for each character to appear: frequency of occurrence/total character occurrences
- * - Most common character
- * - Max/min garbage spacing b/w hidden spans
- * - Width of block (avg)
- * - How fun this quiz was: 10/10
+ * Calculate some simple statistics for the data gathered
+ *
+ * @param req
+ * @param res
  */
+exports.data = function(req, res) {
+    var stats = utility.getStats('stats');
+    var characterFrequency = utility.getStats('characters');
+
+    // Calculate total occurrences first
+    var total = 0;
+    for (var key in characterFrequency) {
+        if (characterFrequency.hasOwnProperty(key)) {
+            total += parseInt(characterFrequency[key]);
+        }
+    }
+
+    // Then calculate percentages for each character
+    var characterStats = {};
+    for (var key in characterFrequency) {
+        if (characterFrequency.hasOwnProperty(key)) {
+            characterStats[key] = {
+                frequency: characterFrequency[key],
+                chanceOfOccurrence: (characterFrequency[key] / total) * 100
+            }
+        }
+    }
+
+    var response = {
+        howMuchFunThisWas: '10/10',
+        stats: stats,
+        characterStats: characterStats
+    };
+
+    res.json(response)
+};

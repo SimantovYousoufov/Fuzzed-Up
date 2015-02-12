@@ -1,3 +1,4 @@
+var express = require('express');
 // Require controllers
 var fuzzController = require('./controllers/fuzz');
 
@@ -8,10 +9,7 @@ module.exports = function(app) {
 
     app.get('/pattern', fuzzController.getPattern);
 
-    // Other routes may use app.post, app.get, app.delete
+    app.get('/data', fuzzController.data);
 
-    // Front end
-    //app.get('*', function(req, res) {
-    //    res.sendFile('./public/views/index.html');
-    //});
+    app.use(express.static('./public'));
 };

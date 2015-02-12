@@ -8,12 +8,8 @@ var port = process.env.PORT || 8080;
 
 // To get body of POST
 app.use(bodyParser.json());
-//app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(methodOverride('X-HTTP-Method-Overrise'));
-
-// Set static files location
-app.use(express.static(__dirname + '/public'));
+app.use(methodOverride('X-HTTP-Method-Override'));
 
 // Routes
 require('./routes')(app);
