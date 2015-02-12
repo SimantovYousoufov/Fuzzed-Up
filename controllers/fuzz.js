@@ -135,6 +135,7 @@ exports.getPattern = function(req, res) {
             var lastIndex = 0;
             var minRangeSinceLast = 1000;
             var maxRangeSinceLast = 0;
+            var breakIndexes = [];
 
             var charsUsed = getStats();
 
@@ -144,6 +145,7 @@ exports.getPattern = function(req, res) {
                     // Ignore br tags
                     if ($(this).is('br'))
                         lastIndex++; // Add one to ignore effect of a <br> tag on the index()
+                        breakIndexes.push($(this).index());
 
                     if ($(this).index() > 0 && minRangeSinceLast > ($(this).index() - lastIndex)) {
                         minRangeSinceLast = $(this).index() - lastIndex;
@@ -162,11 +164,28 @@ exports.getPattern = function(req, res) {
             });
             writeStats(JSON.stringify(charsUsed, undefined, 2));
 
+            var characters = [];
+            for (var key in charsUsed) {
+                if (charsUsed.hasOwnProperty(key)) characters.push(key);
+            }
+
+            var blockWidth = 0;
+            for (var i = 1; i < breakIndexes.length; i++) {
+                // Find this break width and average it with the ones already found for more accurate results
+                blockWidth = (blockWidth + (breakIndexes[i] - breakIndexes[i-1]))/2;
+            }
+
             // @TODO this significantly slows execution, why?
             //var blockWidth = $('br:nth-of-type(2)').index() - $('br:first-of-type').index();
-            //console.log(blockWidth);
 
-            res.send($.html());
+            var response = {
+                minRange: minRangeSinceLast,
+                maxRange: maxRangeSinceLast,
+                characters: characters,
+                breakIndexes: breakIndexes,
+                blockWidth: blockWidth
+            };
+            res.send(response);
         } else {
             res.send('Error occurred');
         }
