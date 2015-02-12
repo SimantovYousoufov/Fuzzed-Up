@@ -31,8 +31,11 @@ exports.decode = function(req, res) {
             });
             $(selector).prepend('<div>'+goal+'</div>'); // Extract the hidden message
 
-            // Handle hiding non-used chars
+            // Handle hiding unused elements
             $('span:not([hidden])').remove();
+            $('script').each(function() {
+                $(this).remove();
+            });
 
             res.send($.html());
         } else {

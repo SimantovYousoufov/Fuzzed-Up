@@ -5,7 +5,7 @@ var fuzzController = require('./controllers/fuzz');
 module.exports = function(app) {
     app.get('/decode', fuzzController.decode);
 
-    app.get('/scramble', fuzzController.scramble);
+    app.post('/scramble', fuzzController.scramble);
 
     app.get('/pattern', fuzzController.getPattern);
 

@@ -100,7 +100,6 @@ module.exports = {
         var statsFile = __dirname + '/../database/'+file+'.json';
         fs.writeFile(statsFile, data, function(err) {
             if (err) throw err;
-            console.log('file saved');
         })
     }
 };
