@@ -1,10 +1,5 @@
 // Require controllers
-var siteController = require('./controllers/index');
 var fuzzController = require('./controllers/fuzz');
-
-// Routes
-//app.get('/', siteController.index);
-//app.get('/decode', fuzzController.decode);
 
 module.exports = function(app) {
     app.get('/decode', fuzzController.decode);
