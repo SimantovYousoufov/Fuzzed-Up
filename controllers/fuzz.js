@@ -142,11 +142,6 @@ exports.getPattern = function(req, res) {
             $('span').each(function() {
                 //scrambledText += $(this).text();
                 if (typeof $(this).attr('hidden') != 'undefined') {
-                    // Ignore br tags
-                    if ($(this).is('br'))
-                        lastIndex++; // Add one to ignore effect of a <br> tag on the index()
-                        breakIndexes.push($(this).index());
-
                     if ($(this).index() > 0 && minRangeSinceLast > ($(this).index() - lastIndex)) {
                         minRangeSinceLast = $(this).index() - lastIndex;
                     }
@@ -161,6 +156,11 @@ exports.getPattern = function(req, res) {
                         typeof charsUsed[$(this).text()] != 'undefined' ? // Character already set?
                         charsUsed[$(this).text()] + 1 : 1; // Add count else create a record
                 }
+            });
+
+            $('br').each(function() {
+                // Ignore br tags
+                breakIndexes.push($(this).index());
             });
 
             var characters = [];
@@ -186,7 +186,8 @@ exports.getPattern = function(req, res) {
                 minRange: minRangeSinceLast,
                 maxRange: maxRangeSinceLast,
                 characters: characters.join(''),
-                blockWidth: blockWidth
+                blockWidth: blockWidth,
+                breakIndexes: breakIndexes
             };
             res.send(response);
         } else {
