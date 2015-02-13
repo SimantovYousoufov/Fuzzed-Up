@@ -58,7 +58,7 @@ exports.scramble = function(req, res) {
 
     var spacerCount = 0; // Position in scrambleThis string
     // Iterate over the string and insert a garbageString after each index
-    while (spacerCount <= options.scrambleThis.length) {
+    while (spacerCount < options.scrambleThis.length) {
         var secretLetter = '<span hidden class="secretChar">' + options.scrambleThis[spacerCount] + '</span>';
         spacerCount++;
 

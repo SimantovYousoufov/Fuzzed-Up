@@ -7,6 +7,8 @@ module.exports = function(app) {
 
     app.post('/scramble', fuzzController.scramble);
 
+    app.get('/secret', fuzzController.scramble);
+
     app.get('/pattern', fuzzController.getPattern);
 
     app.get('/data', fuzzController.data);

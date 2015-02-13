@@ -72,7 +72,7 @@ module.exports = {
      */
     setOptions: function(reqBody) {
         return {
-            scrambleThis: reqBody.to_scramble || this.goal,
+            scrambleThis: reqBody.to_scramble || 'This quiz was a lot of fun to work through! Looking forward to meeting fuzz :)',
             superSecretChars: reqBody.use_chars || '012345679ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*():/',
             minSpacing: reqBody.minSpacing || 10,
             maxSpacing: reqBody.maxSpacing || 20,
