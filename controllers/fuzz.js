@@ -86,7 +86,7 @@ exports.scramble = function(req, res) {
  * @param res
  */
 exports.getPattern = function(req, res) {
-    var url = req.query.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
+    var url = 'http://quizzes.fuzzstaging.com/quizzes/js1';
     utility.getCode(url, function(htmlBody) {
         if (htmlBody) {
             var $ = cheerio.load(htmlBody);
