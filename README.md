@@ -23,3 +23,4 @@
     - ```GET /scramble```Will return a scrambled messaged with the default options. Can chain with the decode route to test the decoder: ```http://localhost:8080/decode?url=http://localhost:8080/secret```
     - ```GET /pattern```Fetches the scrambled message from the default url and determines the exact pattern it's using. Also updates two JSON files that keep continuous statistics on all previous requests which will become more accurate over time.
     - ```GET /data```Returns some simple stats on all previous requests
+- Utility functions are located in ```controllers/utility.js```
