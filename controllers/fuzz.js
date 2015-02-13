@@ -12,8 +12,8 @@ var goal = 'Elegantly unscramble this message using the space provided. Then wri
  * @param res
  */
 exports.decode = function(req, res) {
-    var url = req.body.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
-    var selector = req.body.selector || 'body';
+    var url = req.query.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
+    var selector = req.query.selector || 'body';
 
     utility.getCode(url, function(htmlBody) {
         if (htmlBody) {
@@ -86,7 +86,7 @@ exports.scramble = function(req, res) {
  * @param res
  */
 exports.getPattern = function(req, res) {
-    var url = req.body.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
+    var url = req.query.url || 'http://quizzes.fuzzstaging.com/quizzes/js1';
     utility.getCode(url, function(htmlBody) {
         if (htmlBody) {
             var $ = cheerio.load(htmlBody);
